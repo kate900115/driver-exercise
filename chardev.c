@@ -19,5 +19,24 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 static int Major;
 static int Device_Open = 0;
 
+static char msg[BUF_LEN];
+static char *msg_ptr;
 
+static struct file_operations fops = {
+	.read = device_read,
+	.write = device_write,
+	.open = device_open,
+	.release = device_release
+};
+
+int init_module(void){
+	Major = register_chrdev(0, DEVICE_NAME, &fops);
+
+	if (Major < 0){
+		printk(KERN_INFO "Registering char device failed with %d\n", Major);
+		return Major;
+	}
+
+
+}
 
