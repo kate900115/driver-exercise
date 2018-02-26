@@ -71,19 +71,16 @@ int mmap_kmem(struct file *filp, struct vm_area_struct *vma)
 	/* #ifdef ARCH_HAS_DMA_MMAP_COHERENT */
 	if (vma->vm_pgoff == 0) {
 		printk(KERN_INFO "Using dma_mmap_coherent\n");
-		ret = dma_mmap_coherent(NULL, vma, alloc_ptr,
-		dma_handle, length);
+		ret = dma_mmap_coherent(NULL, vma, alloc_ptr, dma_handle, length);
 	} 
 	else{
 		printk(KERN_INFO "Using remap_pfn_range\n");
 		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 		vma->vm_flags |= VM_IO;
 		printk(KERN_INFO "off=%d\n", vma->vm_pgoff);
-		ret = remap_pfn_range(vma, vma->vm_start,
-		PFN_DOWN(virt_to_phys(bus_to_virt(dma_handle))) +
-		vma->vm_pgoff, length, vma->vm_page_prot);
+		ret = remap_pfn_range(vma, vma->vm_start,PFN_DOWN(virt_to_phys(bus_to_virt(dma_handle))) + vma->vm_pgoff, length, vma->vm_page_prot);
 	}
-/* #endif */
+	/* #endif */
 	/* map the whole physically contiguous area in one piece */
 	if (ret < 0) {
 		printk(KERN_ERR "mmap_alloc: remap failed (%d)\n", ret);
