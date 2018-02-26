@@ -109,64 +109,55 @@ static int __init mmap_alloc_init(void){
 	alloc_ptr = dma_alloc_coherent (NULL, (NPAGES + 2) * PAGE_SIZE, &dma_handle, GFP_KERNEL);
 
 	if (!alloc_ptr) {
-		printk(KERN_ERR
-		    "mmap_alloc: dma_alloc_coherent error\n");
-                ret = -ENOMEM;
-                goto out;
-        }
-	printk(KERN_INFO "mmap_alloc: physical address is %lu\n",
-	    dma_handle);
-	printk(KERN_INFO "mmap_alloc: bus_to_virt %lu\n",
-	    virt_to_phys(bus_to_virt(dma_handle)));
+		printk(KERN_ERR "mmap_alloc: dma_alloc_coherent error\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	printk(KERN_INFO "mmap_alloc: physical address is %lu\n", dma_handle);
+	printk(KERN_INFO "mmap_alloc: bus_to_virt %lu\n", virt_to_phys(bus_to_virt(dma_handle)));
 
 	alloc_area = alloc_ptr;
 
-        /* get the major number of the character device */
-        if ((ret = alloc_chrdev_region(&mmap_dev, 0, 1, "mmap_alloc")) < 0) {
-                printk(KERN_ERR
-		    "mmap_alloc: could not allocate major number for mmap\n");
-                goto out_vfree;
-        }
+	/* get the major number of the character device */
+	if ((ret = alloc_chrdev_region(&mmap_dev, 0, 1, "mmap_alloc")) < 0) {
+		printk(KERN_ERR "mmap_alloc: could not allocate major number for mmap\n");
+		goto out_vfree;
+	}
 
-        /* initialize the device structure and register the device with the
-	 * kernel */
-        cdev_init(&mmap_cdev, &mmap_fops);
-        if ((ret = cdev_add(&mmap_cdev, mmap_dev, 1)) < 0) {
-                printk(KERN_ERR
-		    "mmap_alloc: could not allocate chrdev for mmap\n");
-                goto out_unalloc_region;
-        }
+	/* initialize the device structure and register the device with the * kernel */
+	cdev_init(&mmap_cdev, &mmap_fops);
+	if ((ret = cdev_add(&mmap_cdev, mmap_dev, 1)) < 0) {
+		printk(KERN_ERR "mmap_alloc: could not allocate chrdev for mmap\n");
+		goto out_unalloc_region;
+	}
 
 	/* store a pattern in the memory.
 	 * the test application will check for it */
-        for (i = 0; i < (NPAGES * PAGE_SIZE / sizeof(int)); i += 2) {
-                alloc_area[i] = (0xdead << 16) + i;
-                alloc_area[i + 1] = (0xbeef << 16) + i;
-        }
-        
-        return ret;
-        
-  out_unalloc_region:
+	for (i = 0; i < (NPAGES * PAGE_SIZE / sizeof(int)); i += 2) {
+		alloc_area[i] = (0xdead << 16) + i;
+		alloc_area[i + 1] = (0xbeef << 16) + i;
+	}
+	return ret;
+
+	out_unalloc_region:
         unregister_chrdev_region(mmap_dev, 1);
-  out_vfree:
-	dma_free_coherent (NULL, (NPAGES + 2) * PAGE_SIZE, alloc_ptr,
-	    dma_handle);
-  out:
-        return ret;
+	out_vfree:
+		dma_free_coherent (NULL, (NPAGES + 2) * PAGE_SIZE, alloc_ptr, dma_handle);
+	out:
+		return ret;
 }
 
 /* module unload */
 static void __exit mmap_alloc_exit(void)
 {
-        int i;
+	int i;
 
-        /* remove the character deivce */
-        cdev_del(&mmap_cdev);
-        unregister_chrdev_region(mmap_dev, 1);
+	/* remove the character deivce */
+	cdev_del(&mmap_cdev);
+	unregister_chrdev_region(mmap_dev, 1);
 
 	/* free the memory areas */
-	dma_free_coherent (NULL, (NPAGES + 2) * PAGE_SIZE, alloc_ptr,
-	    dma_handle);
+	dma_free_coherent (NULL, (NPAGES + 2) * PAGE_SIZE, alloc_ptr, dma_handle);
 }
 
 module_init(mmap_alloc_init);
